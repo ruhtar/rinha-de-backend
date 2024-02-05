@@ -17,9 +17,14 @@ namespace RinhaDeBackend.Controllers
         }
 
         [HttpGet("clientes/{id}/extrato")]
-        public IActionResult GetExtrato([FromRoute] int id)
+        public async Task<IActionResult> GetExtratoAsync([FromRoute] int id)
         {
-            return Ok();
+            var result = await _transacaoService.GetExtrato(id);
+            if (result.IsSuccess)
+            {
+                return Ok(result.Data);
+            }
+            return result.GetResponseWithStatusCode(); //ALTERAR ISSO PARA O FORMATO DA API CORRETO
         }
 
         [HttpPost("clientes/{id}/transacoes")]

@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using RinhaDeBackend;
 using RinhaDeBackend.Data;
 using RinhaDeBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = "Host=db;Port=5432;Database=rinha;Username=postgres;Password=123";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(Utils.ConnectionString));
 
 // Add services to the container.
 

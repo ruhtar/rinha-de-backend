@@ -68,7 +68,7 @@ namespace RinhaDeBackend.Services
 
             var transacao = new Transacao
             {
-                IdCliente = id,
+                ClienteId = id,
                 Valor = transacaoDto.Valor,
                 Tipo = transacaoDto.Tipo,
                 Descricao = transacaoDto.Descricao,

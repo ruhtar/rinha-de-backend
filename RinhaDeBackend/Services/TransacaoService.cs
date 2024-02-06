@@ -47,23 +47,13 @@ namespace RinhaDeBackend.Services
 
         public async Task<OperationResult<ResponseTransacaoDto>> EfetuarTransacaoAsync(int id, RequestTransacaoDto transacaoDto)
         {
-            var cliente = await _context.Clientes.FirstOrDefaultAsync(c => c.Id == id); //Add AsNoTracking?
+            var cliente = await _context.Clientes.SingleAsync(c => c.Id == id); //SingleAsync ao inves de FirstOrDefault para melhor perfomance
 
-            if (cliente == null)
-            {
-                var operationResult = new OperationResult<ResponseTransacaoDto>(false, "Cliente não encontrado", null, 404);
-                return operationResult;
-            }
+            cliente!.Saldo -= transacaoDto.Valor;
 
-            if (transacaoDto.Tipo == 'd')
+            if (cliente.Saldo * -1 > cliente.Limite)
             {
-                cliente.Saldo -= transacaoDto.Valor;
-                if (cliente.Saldo * -1 > cliente.Limite)
-                {
-                    //dado inconsistente, tratar
-                    //retornar um 422 sem corpo e sem completar a transacao
-                    return new OperationResult<ResponseTransacaoDto>(false, "Passou o limite", null, 422);
-                }
+                return new OperationResult<ResponseTransacaoDto>(false, "Passou o limite", null, 422);
             }
 
             var transacao = new Transacao
@@ -79,14 +69,13 @@ namespace RinhaDeBackend.Services
 
             var response = new ResponseTransacaoDto
             {
-                Limite = cliente.Limite,
-                Saldo = cliente.Saldo
+                Limite = cliente!.Limite,
+                Saldo = cliente!.Saldo
             };
 
             var result = new OperationResult<ResponseTransacaoDto>(true, "Sucesso", response, 200);
             await _context.SaveChangesAsync();
             return result;
-
         }
     }
 }

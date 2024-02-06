@@ -31,7 +31,11 @@ namespace RinhaDeBackend.Controllers
         public async Task<IActionResult> FazerTransacaoAsync([FromRoute] int id, [FromBody] RequestTransacaoDto transacaoDto)
         {
             {
-                // Validação do objeto RequestTransacaoDto
+                if (id > 5) //fui mlk aqui
+                {
+                    return NotFound("Usuário não encontrado");
+                }
+
                 if (transacaoDto == null)
                 {
                     return BadRequest("Os dados da transação não foram fornecidos.");
@@ -54,7 +58,10 @@ namespace RinhaDeBackend.Controllers
 
                 // TODO: Lógica de processamento da transação
                 var result = await _transacaoService.EfetuarTransacaoAsync(id, transacaoDto);
-                if (result.HttpStatusCode == 404) return NotFound("Usuário não encontrado");
+                //if (result.HttpStatusCode == 404) return NotFound("Usuário não encontrado");
+                if (!result.IsSuccess) {
+                    return UnprocessableEntity();
+                }
                 return Ok(result.Data);
             }
         }

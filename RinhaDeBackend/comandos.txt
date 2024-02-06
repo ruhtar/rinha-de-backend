@@ -1,0 +1,7 @@
+ docker build . -f .\RinhaDeBackend\Dockerfile
+
+ docker build -t api-rinha . -f .\RinhaDeBackend\Dockerfile
+
+ docker tag api-rinha ruhtar/rinha-de-backend2 -> depois dar push no docker desktop
+
+ 

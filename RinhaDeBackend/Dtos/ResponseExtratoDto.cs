@@ -2,11 +2,11 @@
 {
     public class ResponseExtratoDto
     {
-        public Saldo Saldo { get; set; }
+        public SaldoInfo Saldo { get; set; }
         public List<UltimasTransacoes> ultimas_transacoes { get; set; }
     }
 
-    public class Saldo
+    public class SaldoInfo
     {
         public int Total { get; set; }
         public DateTime data_extrato { get; set; }

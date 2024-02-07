@@ -6,13 +6,11 @@ namespace RinhaDeBackend.Entities
     public class Transacao
     {
         public int Id { get; set; }
-        public int ClienteId { get; set; }
+        public int Cliente_Id { get; set; }
         public int Valor { get; set; }
         public char Tipo { get; set; }
         public string Descricao { get; set; }
-        public DateTime RealizadaEm { get; set; }
+        public DateTime Realizada_Em { get; set; }
 
-        // Relacionamento com clientes
-        public Cliente Cliente { get; set; } = null!;
     }
 }

@@ -8,7 +8,6 @@ namespace RinhaDeBackend.Controllers
     [ApiController]
     public class ClientesController : ControllerBase
     {
-
         private readonly ITransacaoService _transacaoService;
 
         public ClientesController(ITransacaoService transacaoService)
@@ -28,10 +27,10 @@ namespace RinhaDeBackend.Controllers
         }
 
         [HttpPost("clientes/{id}/transacoes")]
-        public async Task<IActionResult> FazerTransacaoAsync([FromRoute] int id, [FromBody] RequestTransacaoDto transacaoDto)
+        public async Task<ActionResult<ResponseTransacaoDto>> FazerTransacaoAsync([FromRoute] int id, [FromBody] RequestTransacaoDto transacaoDto)
         {
             {
-                if (id > 5) //fui mlk aqui
+                if (id > 5 && id <= 0) //fui mlk aqui
                 {
                     return NotFound("Usuário não encontrado");
                 }
@@ -56,13 +55,17 @@ namespace RinhaDeBackend.Controllers
                     return BadRequest("A descrição da transação deve ter entre 1 e 10 caracteres.");
                 }
 
-                // TODO: Lógica de processamento da transação
                 var result = await _transacaoService.EfetuarTransacaoAsync(id, transacaoDto);
-                //if (result.HttpStatusCode == 404) return NotFound("Usuário não encontrado");
-                if (!result.IsSuccess) {
+                if (!result.IsSuccess)
+                {
                     return UnprocessableEntity();
                 }
-                return Ok(result.Data);
+                var response = result.Data;
+                return Ok(new
+                {
+                    limite = response!.Limite,
+                    saldo = response!.Saldo,
+                });
             }
         }
     }

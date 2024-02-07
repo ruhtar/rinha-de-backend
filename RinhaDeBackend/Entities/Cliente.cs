@@ -9,8 +9,8 @@ namespace RinhaDeBackend.Entities
         public int Id { get; set; }
         public int Limite { get; set; }
         public string Nome { get; set; }
-        public ICollection<Transacao> Transacoes { get; set; } = new List<Transacao>();
+        //public ICollection<Transacao> Transacoes { get; set; } = new List<Transacao>();
 
-        public int Saldo { get; set; }
+        //public int Saldo { get; set; }
     }
 }

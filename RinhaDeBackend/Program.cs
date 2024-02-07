@@ -1,13 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using RinhaDeBackend;
-using RinhaDeBackend.Data;
 using RinhaDeBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(Utils.ConnectionString));
+//builder.Services.AddDbContext<AppDbContext>(options =>
+//    options.UseNpgsql(Utils.ConnectionString));
 
 // Add services to the container.
 

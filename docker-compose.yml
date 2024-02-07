@@ -1,8 +1,7 @@
 version: "3.5"
 
 services:
-  api01: &api
-    # image: ruhtar/rinha-de-backend2
+  api01: &api # image: ruhtar/rinha-de-backend2
     image: ${DOCKER_REGISTRY-}rinha-api
     restart: always
     build:
@@ -32,7 +31,7 @@ services:
     ports:
       - "3002:8080"
       # - "3002:8080"
-  
+
   nginx:
     image: nginx:latest
     # network_mode: "host"
@@ -52,7 +51,7 @@ services:
   db:
     image: postgres:latest
     hostname: db
-    restart: unless-stopped
+    # restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=123
       - POSTGRES_USER=postgres
@@ -67,7 +66,6 @@ services:
         limits:
           cpus: "1"
           memory: "300MB"
-
 # networks:
 #   default:
 #     driver: bridge

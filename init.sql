@@ -23,6 +23,11 @@ CREATE TABLE saldos (
        FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
+
+CREATE INDEX idx_clientes_id ON clientes (id);
+CREATE INDEX idx_transacoes_cliente_id ON transacoes (cliente_id);
+CREATE INDEX idx_saldos_cliente_id ON saldos (cliente_id);
+
 BEGIN TRANSACTION;
 
 INSERT INTO clientes (nome, limite)

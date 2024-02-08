@@ -21,9 +21,14 @@ namespace RinhaDeBackend.Services
 
             try
             {
-                var limiteCliente = await ObterLimiteDoClientePorIdAsync(id, connection);
-                var saldoValor = await ObterSaldoDoClienteAsync(id, connection);
-                var transacoes = await ObterTransacoesDoClientePorIdAsync(id, connection);
+                // var limiteCliente = await ObterLimiteDoClientePorIdAsync(id, connection);
+                // var saldoValor = await ObterSaldoDoClienteAsync(id, connection);
+                // var transacoes = await ObterTransacoesDoClientePorIdAsync(id, connection);
+                var informacoesCliente = await ObterInformacoesDoClienteAsync(clienteId, suaConexao);
+
+                int limiteCliente = informacoesCliente.Limite;
+                int saldoValor = informacoesCliente.Saldo;
+                List<UltimasTransacoes> transacoes = informacoesCliente.Transacoes;
 
                 var response = new ResponseExtratoDto
                 {
@@ -111,7 +116,7 @@ namespace RinhaDeBackend.Services
         private async Task AtualizarSaldoAsync(int id, int saldoValor, NpgsqlConnection connection)
         {
             var query = "UPDATE saldos SET valor = @saldoValor WHERE id = @id";
-            await connection.QueryFirstOrDefaultAsync(query, new { saldoValor, id });
+            await connection.ExecuteAsync(query, new { saldoValor, id });
         }
 
         private async Task<List<UltimasTransacoes>> ObterTransacoesDoClientePorIdAsync(int id, IDbConnection connection)
@@ -139,5 +144,24 @@ namespace RinhaDeBackend.Services
 
             await connection.ExecuteAsync(query, transacao);
         }
+
+        private async Task<(int Limite, int Saldo, List<UltimasTransacoes> Transacoes)> ObterInformacoesDoClienteAsync(int id, IDbConnection connection)
+{
+    var query = @"
+        SELECT 
+            c.limite AS Limite,
+            s.valor AS Saldo,
+            t.valor, t.tipo, t.descricao, t.realizada_em
+        FROM Clientes c
+        LEFT JOIN Saldos s ON c.Id = s.Cliente_Id
+        LEFT JOIN transacoes t ON c.Id = t.cliente_id
+        WHERE c.Id = @ClienteId
+        ORDER BY t.realizada_em DESC
+        LIMIT 10";
+    
+    var result = await connection.QueryAsync<(int Limite, int Saldo, int valor, string tipo, string descricao, DateTime realizada_em)>(query, new { ClienteId = id });
+
+    return (result.FirstOrDefault().Limite, result.FirstOrDefault().Saldo, result.Select(r => new UltimasTransacoes { Valor = r.valor, Tipo = r.tipo, Descricao = r.descricao, RealizadaEm = r.realizada_em }).ToList());
+}
     }
 }

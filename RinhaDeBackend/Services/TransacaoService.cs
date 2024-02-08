@@ -24,7 +24,7 @@ namespace RinhaDeBackend.Services
                 // var limiteCliente = await ObterLimiteDoClientePorIdAsync(id, connection);
                 // var saldoValor = await ObterSaldoDoClienteAsync(id, connection);
                 // var transacoes = await ObterTransacoesDoClientePorIdAsync(id, connection);
-                var informacoesCliente = await ObterInformacoesDoClienteAsync(clienteId, suaConexao);
+                var informacoesCliente = await ObterInformacoesDoClienteAsync(id, connection);
 
                 int limiteCliente = informacoesCliente.Limite;
                 int saldoValor = informacoesCliente.Saldo;
@@ -159,9 +159,9 @@ namespace RinhaDeBackend.Services
         ORDER BY t.realizada_em DESC
         LIMIT 10";
     
-    var result = await connection.QueryAsync<(int Limite, int Saldo, int valor, string tipo, string descricao, DateTime realizada_em)>(query, new { ClienteId = id });
+    var result = await connection.QueryAsync<(int Limite, int Saldo, int valor, char tipo, string descricao, DateTime realizada_em)>(query, new { ClienteId = id });
 
-    return (result.FirstOrDefault().Limite, result.FirstOrDefault().Saldo, result.Select(r => new UltimasTransacoes { Valor = r.valor, Tipo = r.tipo, Descricao = r.descricao, RealizadaEm = r.realizada_em }).ToList());
+    return (result.FirstOrDefault().Limite, result.FirstOrDefault().Saldo, result.Select(r => new UltimasTransacoes { Valor = r.valor, Tipo = r.tipo, Descricao = r.descricao, realizada_em = r.realizada_em }).ToList());
 }
     }
 }

@@ -19,7 +19,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.2"
+          cpus: "0.35"
           memory: "110MB"
 
   api02:
@@ -56,22 +56,23 @@ services:
       - POSTGRES_PASSWORD=123
       - POSTGRES_USER=postgres
       - POSTGRES_DB=rinha
-      - POSTGRES_MAX_CONNECTIONS=150
+      # - POSTGRES_MAX_CONNECTIONS=150
       # - POSTGRES_SHARED_BUFFERS=256MB # Ajuste conforme necessário
       # - POSTGRES_MAX_WAL_SIZE=1GB # Ajuste conforme necessário
-      - POSTGRES_FSYNC=off
-      - POSTGRES_SYNCHRONOUS_COMMIT=off
-      - POSTGRES_CHECKPOINT_TIMEOUT=1d
-      - POSTGRES_FULL_PAGE_WRITES=false
+      # - POSTGRES_FSYNC=off
+      # - POSTGRES_SYNCHRONOUS_COMMIT=off
+      # - POSTGRES_CHECKPOINT_TIMEOUT=1d
+      # - POSTGRES_FULL_PAGE_WRITES=false
     ports:
       - "5433:5432"
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: postgres -c 'max_connections=1500' -c 'fsync=off' -c 'synchronous_commit=off' -c 'checkpoint_timeout=1d' -c 'full_page_writes=false'
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     deploy:
       resources:
         limits:
-          cpus: "1"
+          cpus: "0.7"
           memory: "300MB"
 # networks:
 #   default:

@@ -15,106 +15,6 @@ namespace RinhaDeBackend.Controllers
     [ApiController]
     public class ClientesController : ControllerBase
     {
-        //private readonly NpgsqlConnection _dbConnection;
-        private readonly DatabaseContext dbContext;
-
-        public ClientesController(DatabaseContext _dbContext)
-        {
-            dbContext = _dbContext;
-        }
-
-
-        //[HttpGet("/clientes/{id}/extrato")]
-        //public async Task<IActionResult> Extrato(int id)
-        //{
-        //    using (var conn = _dbConnection)
-        //    {
-        //        conn.Open();
-
-        //        var cliente = await conn.QueryFirstOrDefaultAsync<Cliente>("SELECT * FROM clientes WHERE id = @Id", new { Id = id });
-
-        //        if (cliente == null)
-        //        {
-        //            return NotFound();
-        //        }
-
-        //        var transacoes = await conn.QueryAsync<Transacao>("SELECT * FROM transacoes WHERE cliente_id = @Id ORDER BY ID DESC LIMIT 10", new { Id = id });
-
-        //        return Ok(new
-        //        {
-        //            code = 200,
-        //            data = new
-        //            {
-        //                saldo = new
-        //                {
-        //                    total = cliente.Saldo,
-        //                    data_extrato = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ"),
-        //                    limite = cliente.Limite
-        //                },
-        //                ultimas_transacoes = transacoes
-        //            }
-        //        });
-        //    }
-        //}
-
-        //[HttpPost("/clientes/{id}/transacoes")]
-        //public async Task<IActionResult> Transacoes(int id, [FromBody] TransacaoRequest data)
-        //{
-        //    if (data.Valor < 0 || data.Valor != (int)data.Valor)
-        //    {
-        //        return UnprocessableEntity();
-        //    }
-
-        //    if (!new[] { 'c', 'd' }.Contains(data.Tipo))
-        //    {
-        //        return UnprocessableEntity();
-        //    }
-
-        //    if (string.IsNullOrEmpty(data.Descricao) || data.Descricao.Length == 0 || data.Descricao.Length > 10)
-        //    {
-        //        return UnprocessableEntity();
-        //    }
-
-        //    using (var conn = _dbConnection)
-        //    {
-        //        conn.Open();
-
-        //        var cliente = await conn.QueryFirstOrDefaultAsync<Cliente>("SELECT saldo, limite FROM clientes WHERE id = @Id", new { Id = id });
-
-        //        if (cliente == null)
-        //        {
-        //            return NotFound();
-        //        }
-
-        //        if (data.Tipo == 'c')
-        //        {
-        //            cliente.Saldo += (int)data.Valor;
-        //        }
-        //        else
-        //        {
-        //            cliente.Saldo -= data.Valor;
-
-        //            if (cliente.Saldo < -cliente.Limite)
-        //            {
-        //                return UnprocessableEntity();
-        //            }
-        //        }
-
-        //        await conn.ExecuteAsync("INSERT INTO transacoes (cliente_id, tipo, valor, descricao) VALUES (@Id, @Tipo, @Valor, @Descricao)", new { Id = id, data.Tipo, data.Valor, data.Descricao });
-        //        await conn.ExecuteAsync("UPDATE clientes SET saldo = @Saldo WHERE id = @Id", new { Saldo = cliente.Saldo, Id = id });
-
-        //        return Ok(new
-        //        {
-        //            code = 200,
-        //            data = new
-        //            {
-        //                limite = cliente.Limite,
-        //                saldo = cliente.Saldo
-        //            }
-        //        });
-        //    }
-        //}
-
         [HttpGet("clientes/{id:int}/extrato")]
         public async Task<IActionResult> GetExtratoAsync([FromRoute] int id)
         {
@@ -150,9 +50,14 @@ namespace RinhaDeBackend.Controllers
                     return UnprocessableEntity();
                 }
                 var response = result.Data;
+                //if (response == null)
+                //{
+                //    return NotFound("Resposta não encontrada");
+                //}
+
                 return Ok(new
                 {
-                    limite = response!.Limite,
+                    limite = ClientesCache.ObterLimiteCliente(id),
                     saldo = response!.Saldo,
                 });
             }
@@ -162,14 +67,14 @@ namespace RinhaDeBackend.Controllers
         {
             try
             {
-                var conn = await dbContext.GetConnectionAsync();
+                using var conn = new NpgsqlConnection(Utils.ConnectionString);
                 {
-                    //await conn.OpenAsync();
+                    await conn.OpenAsync();
                     int limiteCliente = ClientesCache.ObterLimiteCliente(id);
                     var saldo = await ObterSaldo(id, conn);
                     var transacoes = await ObterTransacoes(id, conn);
 
-                    //await conn.CloseAsync();
+                    await conn.CloseAsync();
 
                     var response = new ResponseExtratoDto
                     {
@@ -188,6 +93,7 @@ namespace RinhaDeBackend.Controllers
             }
             catch (Exception ex)
             {
+
                 return new OperationResult<ResponseExtratoDto>(false, $"Erro: {ex.Message}", null, 500);
             }
         }
@@ -196,31 +102,45 @@ namespace RinhaDeBackend.Controllers
         {
             try
             {
-                var conn = await dbContext.GetConnectionAsync();
+                using var conn = new NpgsqlConnection(Utils.ConnectionString);
                 {
-                    //await conn.OpenAsync();
-                    var transaction = await conn.BeginTransactionAsync();
-                    var saldoValor = await ObterSaldo(id, conn); //criar variavel nova e usar ao inves de saldoValor
                     var limiteCliente = ClientesCache.ObterLimiteCliente(id);
 
-                    var novoSaldo = 0;
+                    await conn.OpenAsync();
 
-                    if (transacaoDto.Tipo == 'c')
-                    {
-                        novoSaldo = saldoValor + transacaoDto.Valor;
-                    }
-                    else
-                    {
-                        novoSaldo = saldoValor - transacaoDto.Valor;
-                    }
+                    var result = await conn.QuerySingleAsync<(bool success, int? new_saldo)>(
+                    "SELECT * FROM atualizar_saldo_transacao(@ClientId, @TransactionValue, @TransactionType, @DescriptionType)",
+                    new { ClientId = id, TransactionValue = transacaoDto.Valor, TransactionType = transacaoDto.Tipo, DescriptionType = transacaoDto.Descricao });
 
-                    if ((limiteCliente + novoSaldo) < 0)
-                    {
-                        await transaction.RollbackAsync();
-                        //await conn.CloseAsync();
+                    await conn.CloseAsync();
 
+                    var success = result.success;
+                    var novoSaldo = result.new_saldo;
+
+
+                    if (!success || novoSaldo == null)
+                    {
                         return new OperationResult<ResponseTransacaoDto>(false, "Passou o limite", null, 422);
                     }
+                    //var saldoValor = await ObterSaldo(id, conn); //criar variavel nova e usar ao inves de saldoValor
+
+                    //var novoSaldo = 0;
+
+                    //if (transacaoDto.Tipo == 'c')
+                    //{
+                    //    novoSaldo = saldoValor + transacaoDto.Valor;
+                    //}
+                    //else
+                    //{
+                    //    novoSaldo = saldoValor - transacaoDto.Valor;
+                    //}
+
+                    //if ((limiteCliente + novoSaldo) < 0)
+                    //{
+                    //    await conn.CloseAsync();
+
+                    //    return new OperationResult<ResponseTransacaoDto>(false, "Passou o limite", null, 422);
+                    //}
 
                     var transacao = new Transacao
                     {
@@ -230,23 +150,36 @@ namespace RinhaDeBackend.Controllers
                         Descricao = transacaoDto.Descricao,
                         Realizada_Em = DateTime.UtcNow
                     };
+                    //var transaction = await conn.BeginTransactionAsync();
 
-                    await AtualizarSaldoAsync(id, novoSaldo, conn); //Posso tentar usar uma subquery aqui que consulta o saldo e tenta atualizar ele. Deve haver alguma regra no proprio banco pra nao deixar o saldo ser atualizado caso ele ultrapasse o limite.
-                    await InserirTransacaoAsync(transacao, conn);
+                    //await AtualizarSaldoAsync(id, novoSaldo, conn); 
+                    //Posso tentar usar uma subquery aqui que consulta o saldo e tenta atualizar ele. Deve haver alguma regra no proprio banco pra nao deixar o saldo ser atualizado caso ele ultrapasse o limite.
 
+                    //  criar uma FUNCTION que atualiza o saldo do cliente, verifica se (limiteCliente + novoSaldo) < 0. Se for true, ela dá rollback na transação de atualizar o dado.
+                    // O saldo a ser atualizado do cliente segue a seguinte logica 
+                    //if (transacaoDto.Tipo == 'c')
+                    //{
+                    //    novoSaldo = saldoValor + transacaoDto.Valor;
+                    //}
+                    //else
+                    //{
+                    //    novoSaldo = saldoValor - transacaoDto.Valor;
+                    //}
+                    //  A function recebe como parametro o valor da transacao e o tipo dela ( 'c', 'd')
+                    //  Por fim ela insere a transacao
 
-                    await transaction.CommitAsync();
+                    //await InserirTransacaoAsync(transacao, conn);
+
+                    //await transaction.CommitAsync();
                     //await conn.CloseAsync();
 
                     var response = new ResponseTransacaoDto
                     {
                         Limite = limiteCliente,
-                        Saldo = novoSaldo
+                        Saldo = (int)novoSaldo
                     };
 
-                    var result = new OperationResult<ResponseTransacaoDto>(true, "Sucesso", response, 200);
-
-                    return result;
+                    return new OperationResult<ResponseTransacaoDto>(true, "Sucesso", response, 200);
                 }
 
             }

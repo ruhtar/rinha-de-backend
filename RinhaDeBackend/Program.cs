@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors();
 //var connection = new NpgsqlConnection(Utils.ConnectionString);
-builder.Services.AddSingleton(new DatabaseContext());
+//builder.Services.AddSingleton<DatabaseContext>();
 //builder.Services.AddScoped<ITransacaoService, TransacaoService>();
 
 builder.Services.AddControllers();

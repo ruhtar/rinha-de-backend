@@ -1,4 +1,8 @@
+using Npgsql;
+using Npgsql.Internal;
 using RinhaDeBackend;
+using RinhaDeBackend.DbContext;
+using System.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddCors();
+//var connection = new NpgsqlConnection(Utils.ConnectionString);
+builder.Services.AddSingleton(new DatabaseContext());
 //builder.Services.AddScoped<ITransacaoService, TransacaoService>();
 
 builder.Services.AddControllers();

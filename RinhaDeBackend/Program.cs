@@ -1,10 +1,12 @@
-using RinhaDeBackend.Services;
+using RinhaDeBackend;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 //builder.Services.AddDbContext<AppDbContext>(options =>
 //    options.UseNpgsql(Utils.ConnectionString));
+
+//builder.Services.AddNpgsqlDataSource(Utils.ConnectionString);
 
 // Add services to the container.
 

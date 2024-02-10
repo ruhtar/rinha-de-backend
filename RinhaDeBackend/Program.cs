@@ -1,9 +1,3 @@
-using Npgsql;
-using Npgsql.Internal;
-using RinhaDeBackend;
-using RinhaDeBackend.DbContext;
-using System.Data;
-
 var builder = WebApplication.CreateBuilder(args);
 
 

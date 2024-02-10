@@ -88,6 +88,55 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
+-- CREATE OR REPLACE FUNCTION atualizar_saldo_transacao(
+--     cliente_id_param INTEGER,
+--     valor_transacao_param INTEGER,
+--     tipo_transacao_param CHAR(1),
+--     descricao_transacao_param VARCHAR(10) 
+-- ) RETURNS TABLE(success BOOLEAN, new_saldo INTEGER) AS
+-- $$
+-- DECLARE
+--     limite_cliente INTEGER;
+--     saldo_valor INTEGER;
+--     novo_saldo INTEGER;
+-- BEGIN
+--     -- Obter o limite do cliente e o saldo atual em uma única consulta
+--     SELECT c.limite, s.valor INTO limite_cliente, saldo_valor
+--     FROM clientes c
+--     JOIN saldos s ON c.id = s.cliente_id
+--     WHERE c.id = cliente_id_param;
+
+--     -- Calcular o novo saldo com base no tipo de transação
+--     novo_saldo := CASE tipo_transacao_param
+--                   WHEN 'c' THEN saldo_valor + valor_transacao_param
+--                   ELSE saldo_valor - valor_transacao_param
+--                   END;
+
+--     -- Verificar se o novo saldo ultrapassa o limite
+--     IF (limite_cliente + novo_saldo) < 0 THEN
+--         -- Se sim, retornar false
+--         RETURN QUERY SELECT false, null::INTEGER;
+--     ELSE
+--         -- Se não, iniciar a transação
+--         BEGIN
+--             -- Atualizar o saldo do cliente
+--             UPDATE saldos SET valor = novo_saldo WHERE cliente_id = cliente_id_param;
+            
+--             -- Inserir a transação
+--             INSERT INTO transacoes (cliente_id, valor, tipo, descricao) 
+--             VALUES (cliente_id_param, valor_transacao_param, tipo_transacao_param, descricao_transacao_param);
+
+--             -- Se bem-sucedido, retornar true e o novo saldo
+--             RETURN QUERY SELECT true, novo_saldo;
+--         EXCEPTION
+--             WHEN OTHERS THEN
+--                 -- Em caso de erro, retornar false
+--                 RETURN QUERY SELECT false, null::INTEGER;
+--         END;
+--     END IF;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION ObterSaldoETransacoes(clienteId integer)
 RETURNS TABLE (saldo integer, ultimas_transacoes jsonb)
 AS $$
@@ -96,17 +145,7 @@ DECLARE
     transacoes_result jsonb;
 BEGIN
     -- Consulta de Saldo
-    SELECT valor INTO saldo_result FROM saldos WHERE cliente_id = clienteId FOR UPDATE;
-
-    -- Consulta de Últimas Transações
-    -- SELECT jsonb_agg(jsonb_build_object('valor', valor, 'tipo', tipo, 'descricao', descricao, 'realizada_em', realizada_em))
-    -- INTO transacoes_result
-    -- FROM transacoes
-    -- WHERE cliente_id = clienteId
-    -- GROUP BY cliente_id-- Adicionando GROUP BY para corrigir o erro
-    -- -- GROUP BY valor, tipo, descricao, realizada_em
-    -- ORDER BY Realizada_Em DESC
-    -- LIMIT 10;
+    SELECT valor INTO saldo_result FROM saldos WHERE cliente_id = clienteId; -- FOR UPDATE
 
     SELECT jsonb_agg(jsonb_build_object('valor', t.valor, 'tipo', t.tipo, 'descricao', t.descricao, 'realizada_em', t.realizada_em))
 INTO transacoes_result

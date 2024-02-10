@@ -112,7 +112,6 @@ namespace RinhaDeBackend.Controllers
             }
             catch (Exception ex)
             {
-
                 return new OperationResult<ResponseExtratoDto>(false, $"Erro: {ex.Message}", null, 500);
             }
         }
@@ -158,7 +157,6 @@ namespace RinhaDeBackend.Controllers
 
                     return new OperationResult<ResponseTransacaoDto>(true, "Sucesso", response, 200);
                 }
-
             }
             catch (Exception ex)
             {
@@ -183,7 +181,7 @@ namespace RinhaDeBackend.Controllers
 
         private async Task<int> ObterSaldo(int clienteId, IDbConnection connection)
         {
-            var query = "SELECT valor FROM saldos WHERE cliente_id = @clienteId FOR UPDATE"; //FOR UPDATE
+            var query = "SELECT valor FROM saldos WHERE cliente_id = @clienteId"; //FOR UPDATE
             var result = await connection.ExecuteScalarAsync<int>(query, new { clienteId });
 
             return result;

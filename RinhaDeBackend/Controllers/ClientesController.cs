@@ -6,6 +6,9 @@ using RinhaDeBackend.Cache;
 using RinhaDeBackend.Dtos;
 using RinhaDeBackend.Entities;
 using System.Data;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace RinhaDeBackend.Controllers
 {
@@ -15,7 +18,8 @@ namespace RinhaDeBackend.Controllers
         [HttpGet("clientes/{id:int}/extrato")]
         public async Task<IActionResult> GetExtratoAsync([FromRoute] int id)
         {
-            try {
+            try
+            {
                 if (id > 5 || id <= 0) //fui mlk aqui
                 {
                     return NotFound("Usuário não encontrado");
@@ -32,19 +36,19 @@ namespace RinhaDeBackend.Controllers
                 var result = new OperationResult<ResponseExtratoDto>(false, $"Erro: {ex.Message}", null, 500);
                 return result.GetResponseWithStatusCode();
             }
-
         }
 
         [HttpPost("clientes/{id:int}/transacoes")]
         public async Task<IActionResult> FazerTransacaoAsync([FromRoute] int id, [FromBody] RequestTransacaoDto transacaoDto)
         {
-            try {
+            try
+            {
                 if (id > 5 || id <= 0) //fui mlk aqui
                 {
                     return NotFound("Usuário não encontrado");
                 }
 
-                if (transacaoDto == null || transacaoDto.Valor <= 0 || (transacaoDto.Tipo != 'c' && transacaoDto.Tipo != 'd') || (transacaoDto.Descricao.Length < 1 || transacaoDto.Descricao.Length > 10))
+                if (transacaoDto == null || transacaoDto.Valor <= 0 || (transacaoDto.Tipo != 'c' && transacaoDto.Tipo != 'd') || (transacaoDto.Descricao.Length < 1 || transacaoDto.Descricao.Length > 10) || string.IsNullOrWhiteSpace(transacaoDto.Descricao))
                 {
                     return UnprocessableEntity();
                 }
@@ -79,10 +83,17 @@ namespace RinhaDeBackend.Controllers
 
                     await conn.OpenAsync();
 
-                    var saldo = await ObterSaldo(id, conn);
-                    var transacoes = await ObterTransacoes(id, conn);
+                    //var saldo = await ObterSaldo(id, conn);
+                    //var transacoes = await ObterTransacoes(id, conn);
+
+                    //var query = await conn.QuerySingleAsync<SaldoETransacoesCliente>("SELECT * FROM obter_saldo_e_transacoes(@ClienteId)", 
+                    //    new { ClienteId = id});
+                    var results = await ObterSaldoETransacoes(id, conn);
 
                     await conn.CloseAsync();
+
+                    var saldo = results.saldo;
+                    var transacoes = results.ultimas_transacoes;
 
                     var response = new ResponseExtratoDto
                     {
@@ -92,7 +103,7 @@ namespace RinhaDeBackend.Controllers
                             data_extrato = DateTime.UtcNow,
                             Limite = limiteCliente,
                         },
-                        ultimas_transacoes = transacoes,
+                        ultimas_transacoes = transacoes ?? new List<UltimasTransacoes>(),
                     };
 
                     var result = new OperationResult<ResponseExtratoDto>(true, "Sucesso", response, 200);
@@ -186,6 +197,20 @@ namespace RinhaDeBackend.Controllers
             var transacoes = await connection.QueryAsync<UltimasTransacoes>(query, new { clienteId });
 
             return transacoes.AsList();
+        }
+
+        private static async Task<(int saldo, List<UltimasTransacoes> ultimas_transacoes)> ObterSaldoETransacoes(int clienteId, IDbConnection connection)
+        {
+            var query = "SELECT * FROM ObterSaldoETransacoes(@clienteId)";
+            var parameters = new { clienteId };
+            var result = await connection.QueryFirstOrDefaultAsync<(int saldo, string ultimas_transacoes)>(query, parameters);
+            if (result.ultimas_transacoes == null) {
+                return (result.saldo, new List<UltimasTransacoes>());
+            }
+            var ultimasTransacoesList = JsonSerializer.Deserialize<List<UltimasTransacoes>>(result.ultimas_transacoes);
+
+            // Return the result with the deserialized list
+            return (result.saldo, ultimasTransacoesList);
         }
     }
 }

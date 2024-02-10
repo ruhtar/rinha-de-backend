@@ -15,9 +15,9 @@
 
     public class UltimasTransacoes
     {
-        public int Valor { get; set; }
-        public char Tipo { get; set; }
-        public string Descricao { get; set; }
+        public int valor { get; set; }
+        public char tipo { get; set; }
+        public string descricao { get; set; }
         public DateTime realizada_em { get; set; }
     }
 }

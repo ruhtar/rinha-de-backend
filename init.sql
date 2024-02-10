@@ -88,4 +88,65 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION ObterSaldoETransacoes(clienteId integer)
+RETURNS TABLE (saldo integer, ultimas_transacoes jsonb)
+AS $$
+DECLARE
+    saldo_result integer;
+    transacoes_result jsonb;
+BEGIN
+    -- Consulta de Saldo
+    SELECT valor INTO saldo_result FROM saldos WHERE cliente_id = clienteId FOR UPDATE;
+
+    -- Consulta de Últimas Transações
+    -- SELECT jsonb_agg(jsonb_build_object('valor', valor, 'tipo', tipo, 'descricao', descricao, 'realizada_em', realizada_em))
+    -- INTO transacoes_result
+    -- FROM transacoes
+    -- WHERE cliente_id = clienteId
+    -- GROUP BY cliente_id-- Adicionando GROUP BY para corrigir o erro
+    -- -- GROUP BY valor, tipo, descricao, realizada_em
+    -- ORDER BY Realizada_Em DESC
+    -- LIMIT 10;
+
+    SELECT jsonb_agg(jsonb_build_object('valor', t.valor, 'tipo', t.tipo, 'descricao', t.descricao, 'realizada_em', t.realizada_em))
+INTO transacoes_result
+FROM (
+    SELECT valor, tipo, descricao, realizada_em
+    FROM transacoes
+    WHERE cliente_id = clienteId
+    ORDER BY realizada_em DESC
+    LIMIT 10
+) t;
+
+    -- Retornar os resultados
+    RETURN QUERY SELECT saldo_result, transacoes_result;
+END;
+$$
+LANGUAGE plpgsql;
+
+-- CREATE OR REPLACE FUNCTION obter_saldo_e_transacoes(cliente_id_param INTEGER)
+-- RETURNS TABLE(saldo INTEGER, transacoes JSONB) AS
+-- $$
+-- DECLARE
+--     saldo_cliente INTEGER;
+--     valor INTEGER;
+--     descricao VARCHAR(10);
+--     realizada_em TIMESTAMP;
+--     tipo CHAR(1);
+-- BEGIN
+--     -- Obter o saldo do cliente
+--     SELECT valor INTO saldo_cliente FROM saldos WHERE cliente_id = cliente_id_param FOR UPDATE;
+
+--     -- Obter as últimas 10 transações do cliente
+--     SELECT valor INTO valor, tipo INTO tipo, descricao INTO descricao, realizada_em INTO realizada_em
+--     FROM transacoes
+--     WHERE cliente_id = cliente_id_param
+--     ORDER BY realizada_em DESC
+--     LIMIT 10
+
+--     -- Retornar o saldo e as transações
+--     RETURN QUERY SELECT saldo_cliente, valor, descricao, realizada_em, tipo;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
 COMMIT;

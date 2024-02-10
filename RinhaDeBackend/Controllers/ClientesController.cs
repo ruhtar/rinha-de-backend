@@ -48,7 +48,20 @@ namespace RinhaDeBackend.Controllers
                     return NotFound("Usuário não encontrado");
                 }
 
-                if (transacaoDto == null || transacaoDto.Valor <= 0 || (transacaoDto.Tipo != 'c' && transacaoDto.Tipo != 'd') || (transacaoDto.Descricao.Length < 1 || transacaoDto.Descricao.Length > 10) || string.IsNullOrWhiteSpace(transacaoDto.Descricao))
+                //if (!int.TryParse(transacaoDto.Valor.ToString(), out _))
+                //{
+                //    return UnprocessableEntity("O campo 'Valor' deve ser um número inteiro.");
+                //}
+
+                if ((int)transacaoDto.Valor != transacaoDto.Valor) {
+                    return UnprocessableEntity("O campo 'Valor' deve ser um número inteiro.");
+                }
+
+                if (string.IsNullOrWhiteSpace(transacaoDto.Descricao)) {
+                    return UnprocessableEntity();
+                }
+
+                if (transacaoDto == null || (int)transacaoDto.Valor <= 0 || (transacaoDto.Tipo != 'c' && transacaoDto.Tipo != 'd') || transacaoDto.Descricao.Length < 0 || transacaoDto.Descricao.Length > 10)
                 {
                     return UnprocessableEntity();
                 }
@@ -81,16 +94,11 @@ namespace RinhaDeBackend.Controllers
                 {
                     int limiteCliente = ClientesCache.ObterLimiteCliente(id); //TODO: ALTERAR
 
-                    await conn.OpenAsync();
+                    //await conn.OpenAsync();
 
-                    //var saldo = await ObterSaldo(id, conn);
-                    //var transacoes = await ObterTransacoes(id, conn);
-
-                    //var query = await conn.QuerySingleAsync<SaldoETransacoesCliente>("SELECT * FROM obter_saldo_e_transacoes(@ClienteId)", 
-                    //    new { ClienteId = id});
                     var results = await ObterSaldoETransacoes(id, conn);
 
-                    await conn.CloseAsync();
+                    //await conn.CloseAsync();
 
                     var saldo = results.saldo;
                     var transacoes = results.ultimas_transacoes;
@@ -124,13 +132,13 @@ namespace RinhaDeBackend.Controllers
                 {
                     var limiteCliente = ClientesCache.ObterLimiteCliente(id); //TODO: ALTERAR
 
-                    await conn.OpenAsync();
+                    //await conn.OpenAsync();
 
                     var result = await conn.QuerySingleAsync<(bool success, int? new_saldo)>(
                     "SELECT * FROM atualizar_saldo_transacao(@ClientId, @TransactionValue, @TransactionType, @DescriptionType)",
-                    new { ClientId = id, TransactionValue = transacaoDto.Valor, TransactionType = transacaoDto.Tipo, DescriptionType = transacaoDto.Descricao });
+                    new { ClientId = id, TransactionValue = (int)transacaoDto.Valor, TransactionType = transacaoDto.Tipo, DescriptionType = transacaoDto.Descricao });
 
-                    await conn.CloseAsync();
+                    //await conn.CloseAsync();
 
                     var success = result.success;
                     var novoSaldo = result.new_saldo;
@@ -143,7 +151,7 @@ namespace RinhaDeBackend.Controllers
                     var transacao = new Transacao
                     {
                         Cliente_Id = id,
-                        Valor = transacaoDto.Valor,
+                        Valor = (int)transacaoDto.Valor,
                         Tipo = transacaoDto.Tipo,
                         Descricao = transacaoDto.Descricao,
                         Realizada_Em = DateTime.UtcNow

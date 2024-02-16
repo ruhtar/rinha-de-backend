@@ -145,7 +145,7 @@ DECLARE
     transacoes_result jsonb;
 BEGIN
     -- Consulta de Saldo
-    SELECT valor INTO saldo_result FROM saldos WHERE cliente_id = clienteId; -- FOR UPDATE
+    SELECT valor INTO saldo_result FROM saldos WHERE cliente_id = clienteId FOR UPDATE; -- FOR UPDATE
 
     SELECT jsonb_agg(jsonb_build_object('valor', t.valor, 'tipo', t.tipo, 'descricao', t.descricao, 'realizada_em', t.realizada_em))
 INTO transacoes_result

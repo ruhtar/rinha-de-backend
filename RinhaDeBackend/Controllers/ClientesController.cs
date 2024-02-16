@@ -6,9 +6,7 @@ using RinhaDeBackend.Cache;
 using RinhaDeBackend.Dtos;
 using RinhaDeBackend.Entities;
 using System.Data;
-using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace RinhaDeBackend.Controllers
 {
@@ -48,11 +46,6 @@ namespace RinhaDeBackend.Controllers
                     return NotFound("Usuário não encontrado");
                 }
 
-                //if (!int.TryParse(transacaoDto.Valor.ToString(), out _))
-                //{
-                //    return UnprocessableEntity("O campo 'Valor' deve ser um número inteiro.");
-                //}
-
                 if ((int)transacaoDto.Valor != transacaoDto.Valor) {
                     return UnprocessableEntity("O campo 'Valor' deve ser um número inteiro.");
                 }
@@ -75,7 +68,7 @@ namespace RinhaDeBackend.Controllers
 
                 return Ok(new
                 {
-                    limite = ClientesCache.ObterLimiteCliente(id), //TODO: ALTERAR
+                    limite = response.Limite, //TODO: ALTERAR
                     saldo = response!.Saldo,
                 });
             }
@@ -92,7 +85,12 @@ namespace RinhaDeBackend.Controllers
             {
                 using var conn = new NpgsqlConnection(Utils.ConnectionString);
                 {
-                    int limiteCliente = ClientesCache.ObterLimiteCliente(id); //TODO: ALTERAR
+                    var limiteCliente = ClientesCache.GetLimiteCliente(id);
+                    if (limiteCliente == 0) {
+                        var limite = await ConsultarLimite(id, conn);
+                        ClientesCache.SetLimiteCliente(id, limite);
+                        limiteCliente = ClientesCache.GetLimiteCliente(id);
+                    }
 
                     //await conn.OpenAsync();
 
@@ -130,7 +128,13 @@ namespace RinhaDeBackend.Controllers
             {
                 using var conn = new NpgsqlConnection(Utils.ConnectionString);
                 {
-                    var limiteCliente = ClientesCache.ObterLimiteCliente(id); //TODO: ALTERAR
+                    var limiteCliente = ClientesCache.GetLimiteCliente(id);
+                    if (limiteCliente == 0)
+                    {
+                        var limite = await ConsultarLimite(id, conn);
+                        ClientesCache.SetLimiteCliente(id, limite);
+                        limiteCliente = ClientesCache.GetLimiteCliente(id);
+                    }
 
                     //await conn.OpenAsync();
 
@@ -172,6 +176,12 @@ namespace RinhaDeBackend.Controllers
             }
         }
 
+        private async Task<int> ConsultarLimite(int clienteId, IDbConnection connection) {
+            var query = "SELECT limite FROM clientes WHERE id = @clienteId";
+
+            return await connection.ExecuteScalarAsync<int>(query, new { clienteId });
+        }
+
         private async Task AtualizarSaldoAsync(int clienteId, int novoSaldo, IDbConnection connection)
         {
             var query = "UPDATE saldos SET valor = @novoSaldo WHERE cliente_id = @clienteId";
@@ -190,9 +200,7 @@ namespace RinhaDeBackend.Controllers
         private async Task<int> ObterSaldo(int clienteId, IDbConnection connection)
         {
             var query = "SELECT valor FROM saldos WHERE cliente_id = @clienteId"; //FOR UPDATE
-            var result = await connection.ExecuteScalarAsync<int>(query, new { clienteId });
-
-            return result;
+            return await connection.ExecuteScalarAsync<int>(query, new { clienteId });
         }
 
         private async Task<List<UltimasTransacoes>> ObterTransacoes(int clienteId, IDbConnection connection)

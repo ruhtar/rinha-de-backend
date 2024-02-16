@@ -55,10 +55,10 @@ DECLARE
     descricao VARCHAR(10);
 BEGIN
     -- Obter o limite do cliente
-    SELECT limite INTO limite_cliente FROM clientes WHERE id = cliente_id_param;
+    SELECT limite INTO limite_cliente FROM clientes WHERE id = cliente_id_param; -- FOR UPDATE --POSSO ALTERAR ISSO PQ ELE NÃO PRECISA CONSULTAR ISSO
     
     -- Obter o saldo atual do cliente
-    SELECT valor INTO saldo_valor FROM saldos WHERE cliente_id = cliente_id_param;
+    SELECT valor INTO saldo_valor FROM saldos WHERE cliente_id = cliente_id_param FOR UPDATE; -- FOR UPDATE
     
     -- Calcular o novo saldo com base no tipo de transação
     IF tipo_transacao_param = 'c' THEN
@@ -88,55 +88,6 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 
--- CREATE OR REPLACE FUNCTION atualizar_saldo_transacao(
---     cliente_id_param INTEGER,
---     valor_transacao_param INTEGER,
---     tipo_transacao_param CHAR(1),
---     descricao_transacao_param VARCHAR(10) 
--- ) RETURNS TABLE(success BOOLEAN, new_saldo INTEGER) AS
--- $$
--- DECLARE
---     limite_cliente INTEGER;
---     saldo_valor INTEGER;
---     novo_saldo INTEGER;
--- BEGIN
---     -- Obter o limite do cliente e o saldo atual em uma única consulta
---     SELECT c.limite, s.valor INTO limite_cliente, saldo_valor
---     FROM clientes c
---     JOIN saldos s ON c.id = s.cliente_id
---     WHERE c.id = cliente_id_param;
-
---     -- Calcular o novo saldo com base no tipo de transação
---     novo_saldo := CASE tipo_transacao_param
---                   WHEN 'c' THEN saldo_valor + valor_transacao_param
---                   ELSE saldo_valor - valor_transacao_param
---                   END;
-
---     -- Verificar se o novo saldo ultrapassa o limite
---     IF (limite_cliente + novo_saldo) < 0 THEN
---         -- Se sim, retornar false
---         RETURN QUERY SELECT false, null::INTEGER;
---     ELSE
---         -- Se não, iniciar a transação
---         BEGIN
---             -- Atualizar o saldo do cliente
---             UPDATE saldos SET valor = novo_saldo WHERE cliente_id = cliente_id_param;
-            
---             -- Inserir a transação
---             INSERT INTO transacoes (cliente_id, valor, tipo, descricao) 
---             VALUES (cliente_id_param, valor_transacao_param, tipo_transacao_param, descricao_transacao_param);
-
---             -- Se bem-sucedido, retornar true e o novo saldo
---             RETURN QUERY SELECT true, novo_saldo;
---         EXCEPTION
---             WHEN OTHERS THEN
---                 -- Em caso de erro, retornar false
---                 RETURN QUERY SELECT false, null::INTEGER;
---         END;
---     END IF;
--- END;
--- $$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION ObterSaldoETransacoes(clienteId integer)
 RETURNS TABLE (saldo integer, ultimas_transacoes jsonb)
 AS $$
@@ -145,7 +96,7 @@ DECLARE
     transacoes_result jsonb;
 BEGIN
     -- Consulta de Saldo
-    SELECT valor INTO saldo_result FROM saldos WHERE cliente_id = clienteId FOR UPDATE; -- FOR UPDATE
+    SELECT valor INTO saldo_result FROM saldos WHERE cliente_id = clienteId; -- FOR UPDATE
 
     SELECT jsonb_agg(jsonb_build_object('valor', t.valor, 'tipo', t.tipo, 'descricao', t.descricao, 'realizada_em', t.realizada_em))
 INTO transacoes_result
@@ -162,30 +113,5 @@ FROM (
 END;
 $$
 LANGUAGE plpgsql;
-
--- CREATE OR REPLACE FUNCTION obter_saldo_e_transacoes(cliente_id_param INTEGER)
--- RETURNS TABLE(saldo INTEGER, transacoes JSONB) AS
--- $$
--- DECLARE
---     saldo_cliente INTEGER;
---     valor INTEGER;
---     descricao VARCHAR(10);
---     realizada_em TIMESTAMP;
---     tipo CHAR(1);
--- BEGIN
---     -- Obter o saldo do cliente
---     SELECT valor INTO saldo_cliente FROM saldos WHERE cliente_id = cliente_id_param FOR UPDATE;
-
---     -- Obter as últimas 10 transações do cliente
---     SELECT valor INTO valor, tipo INTO tipo, descricao INTO descricao, realizada_em INTO realizada_em
---     FROM transacoes
---     WHERE cliente_id = cliente_id_param
---     ORDER BY realizada_em DESC
---     LIMIT 10
-
---     -- Retornar o saldo e as transações
---     RETURN QUERY SELECT saldo_cliente, valor, descricao, realizada_em, tipo;
--- END;
--- $$ LANGUAGE plpgsql;
 
 COMMIT;

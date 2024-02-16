@@ -51,12 +51,12 @@ namespace RinhaDeBackend.Controllers
                 }
 
                 if (string.IsNullOrWhiteSpace(transacaoDto.Descricao)) {
-                    return UnprocessableEntity();
+                    return UnprocessableEntity("Campo descrição vazio");
                 }
 
                 if (transacaoDto == null || (int)transacaoDto.Valor <= 0 || (transacaoDto.Tipo != 'c' && transacaoDto.Tipo != 'd') || transacaoDto.Descricao.Length < 0 || transacaoDto.Descricao.Length > 10)
                 {
-                    return UnprocessableEntity();
+                    return UnprocessableEntity("Erro na validação");
                 }
 
                 var result = await EfetuarTransacaoAsync(id, transacaoDto);
@@ -68,7 +68,7 @@ namespace RinhaDeBackend.Controllers
 
                 return Ok(new
                 {
-                    limite = response.Limite, //TODO: ALTERAR
+                    limite = response.Limite, 
                     saldo = response!.Saldo,
                 });
             }
@@ -92,11 +92,7 @@ namespace RinhaDeBackend.Controllers
                         limiteCliente = ClientesCache.GetLimiteCliente(id);
                     }
 
-                    //await conn.OpenAsync();
-
                     var results = await ObterSaldoETransacoes(id, conn);
-
-                    //await conn.CloseAsync();
 
                     var saldo = results.saldo;
                     var transacoes = results.ultimas_transacoes;
@@ -136,13 +132,9 @@ namespace RinhaDeBackend.Controllers
                         limiteCliente = ClientesCache.GetLimiteCliente(id);
                     }
 
-                    //await conn.OpenAsync();
-
                     var result = await conn.QuerySingleAsync<(bool success, int? new_saldo)>(
                     "SELECT * FROM atualizar_saldo_transacao(@ClientId, @TransactionValue, @TransactionType, @DescriptionType)",
                     new { ClientId = id, TransactionValue = (int)transacaoDto.Valor, TransactionType = transacaoDto.Tipo, DescriptionType = transacaoDto.Descricao });
-
-                    //await conn.CloseAsync();
 
                     var success = result.success;
                     var novoSaldo = result.new_saldo;
@@ -182,37 +174,6 @@ namespace RinhaDeBackend.Controllers
             return await connection.ExecuteScalarAsync<int>(query, new { clienteId });
         }
 
-        private async Task AtualizarSaldoAsync(int clienteId, int novoSaldo, IDbConnection connection)
-        {
-            var query = "UPDATE saldos SET valor = @novoSaldo WHERE cliente_id = @clienteId";
-
-            await connection.ExecuteAsync(query, new { novoSaldo, clienteId });
-        }
-
-        private async Task InserirTransacaoAsync(Transacao transacao, IDbConnection connection)
-        {
-            var query = "INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em) " +
-                        "VALUES (@Cliente_Id, @Valor, @Tipo, @Descricao, @Realizada_Em)";
-
-            await connection.ExecuteAsync(query, transacao);
-        }
-
-        private async Task<int> ObterSaldo(int clienteId, IDbConnection connection)
-        {
-            var query = "SELECT valor FROM saldos WHERE cliente_id = @clienteId"; //FOR UPDATE
-            return await connection.ExecuteScalarAsync<int>(query, new { clienteId });
-        }
-
-        private async Task<List<UltimasTransacoes>> ObterTransacoes(int clienteId, IDbConnection connection)
-        {
-            var query = "SELECT valor, tipo, descricao, realizada_em " +
-                        "FROM transacoes WHERE cliente_id = @clienteId ORDER BY Realizada_Em DESC LIMIT 10";
-
-            var transacoes = await connection.QueryAsync<UltimasTransacoes>(query, new { clienteId });
-
-            return transacoes.AsList();
-        }
-
         private static async Task<(int saldo, List<UltimasTransacoes> ultimas_transacoes)> ObterSaldoETransacoes(int clienteId, IDbConnection connection)
         {
             var query = "SELECT * FROM ObterSaldoETransacoes(@clienteId)";
@@ -223,7 +184,6 @@ namespace RinhaDeBackend.Controllers
             }
             var ultimasTransacoesList = JsonSerializer.Deserialize<List<UltimasTransacoes>>(result.ultimas_transacoes);
 
-            // Return the result with the deserialized list
             return (result.saldo, ultimasTransacoesList);
         }
     }

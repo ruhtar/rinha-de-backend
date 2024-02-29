@@ -83,7 +83,8 @@ namespace RinhaDeBackend.Controllers
         {
             try
             {
-                using var conn = new NpgsqlConnection(Utils.ConnectionString);
+                // using var conn = new NpgsqlConnection(Utils.ConnectionString);
+                using var conn = new NpgsqlConnection(Environment.GetEnvironmentVariable("DB_CONNECTION_STRING"));
                 {
                     var limiteCliente = ClientesCache.GetLimiteCliente(id);
                     if (limiteCliente == 0) {
@@ -122,7 +123,9 @@ namespace RinhaDeBackend.Controllers
         {
             try
             {
-                using var conn = new NpgsqlConnection(Utils.ConnectionString);
+                // using var conn = new NpgsqlConnection(Utils.ConnectionString);
+                using var conn = new NpgsqlConnection(Environment.GetEnvironmentVariable("DB_CONNECTION_STRING"));
+                // using var conn = new NpgsqlConnection(Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? Utils.ConnectionString);
                 {
                     var limiteCliente = ClientesCache.GetLimiteCliente(id);
                     if (limiteCliente == 0)

@@ -24,7 +24,10 @@ O projeto está organizado em containers, cada um cumprindo um papel específico
 
 ### Teste de Carga
 
-O desafio incluiu um teste de carga envolvendo mais de 60 mil requisições. Implementei validações para controlar a concorrência durante as operações de inserção e leitura de dados, assegurando que a aplicação mantenha a consistência dos dados mesmo sob condições de alta carga.
+O desafio incluiu um teste de carga envolvendo mais de 60 mil requisições. Implementei algumas medidas, como locks pessimistas, para controlar a concorrência durante as operações de inserção e leitura de dados, assegurando que a aplicação mantenha a consistência dos dados mesmo sob condições de alta carga.
+
+![TesteDeCarga](https://github.com/ruhtar/rinha-de-backend/assets/83853014/d4d93494-51d1-46ee-a8df-c0a3f0e54735)
+
 
 ### Como Rodar o Projeto
 

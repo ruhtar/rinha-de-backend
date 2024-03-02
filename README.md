@@ -14,6 +14,13 @@ O desafio pede restrições específicas quanto aos recursos do container, com u
 - **ORM:** Dapper
 - **Load Balancer:** Nginx
 
+### Teste de Carga
+
+O desafio incluiu um teste de carga envolvendo mais de 60 mil requisições. Implementei algumas medidas, como locks pessimistas, para controlar a concorrência durante as operações de inserção e leitura de dados, assegurando que a aplicação mantenha a consistência dos dados mesmo sob condições de alta carga.
+
+![TesteDeCarga](https://github.com/ruhtar/rinha-de-backend/assets/83853014/d4d93494-51d1-46ee-a8df-c0a3f0e54735)
+
+
 ### Implementação
 
 Para garantir a eficiência e consistência dos dados, optei por utilizar índices, locks pessimistas, transações, Functions e um cache. Essas escolhas visam melhorar a performance da aplicação e assegurar que as operações de transação ocorram de maneira consistente.
@@ -22,11 +29,7 @@ Para garantir a eficiência e consistência dos dados, optei por utilizar índic
 
 O projeto está organizado em containers, cada um cumprindo um papel específico no sistema. O arquivo `docker-compose.yml` descreve a configuração dos serviços, incluindo o banco de dados, as instâncias da API e o load balancer. A arquitetura foi pensada para respeitar as restrições de recursos impostas pelo desafio.
 
-### Teste de Carga
 
-O desafio incluiu um teste de carga envolvendo mais de 60 mil requisições. Implementei algumas medidas, como locks pessimistas, para controlar a concorrência durante as operações de inserção e leitura de dados, assegurando que a aplicação mantenha a consistência dos dados mesmo sob condições de alta carga.
-
-![TesteDeCarga](https://github.com/ruhtar/rinha-de-backend/assets/83853014/d4d93494-51d1-46ee-a8df-c0a3f0e54735)
 
 
 ### Como Rodar o Projeto

@@ -2,16 +2,20 @@
 
 ### Descrição do Projeto
 
-A rinha tem como objetivo desenvolver uma API para realizar transações financeiras entre usuários, integrado a um sistema composto por um banco de dados, um load balancer e 2 instâncias dessa API. Todo o sistema é dockerizado e é possível subir a aplicação utilizando o docker-compose. 
+A rinha é uma competição organizada pelo Francisco Zanfranceschi, Software Engineering Specialist no Nubank. Ela tem como objetivo desenvolver uma API para realizar transações financeiras entre usuários, integrada a um sistema composto por um banco de dados, um load balancer e 2 instâncias dessa API. Todo o sistema deve ser dockerizado e é possível subir a aplicação utilizando o docker-compose. 
 
-O desafio pede restrições específicas quanto aos recursos do container, com um limite de 550MB de RAM e 1.5 unidades de CPU para todos os componentes da aplicação. Além disso, enfrentamos um teste de carga com mais de 60 mil requisições, incluindo validações para o controle de concorrência entre inserções e leituras, assegurando a consistência dos dados.
+O desafio pede restrições específicas quanto aos recursos dos contêineres, com um limite de 550MB de RAM e 1.5 unidades de CPU para todos os componentes da aplicação. Além disso, existe uma etapa de teste de carga com mais de 60 mil requisições, incluindo validações para o controle de concorrência entre inserções e leituras, assegurando a consistência dos dados.
 
-### Tecnologias Utilizadas
+Você pode conferir a postagem do evento no link abaixo:
+
+[Repositório da Rinha](https://github.com/zanfranceschi/rinha-de-backend-2024-q1)
+
+### Tecnologias utilizadas
 
 - **Linguagem:** C#
 - **Framework:** .NET 8
 - **Banco de Dados:** Postgres
-- **ORM:** Dapper
+- **Micro ORM:** Dapper
 - **Load Balancer:** Nginx
 
 ### Teste de Carga
